@@ -3,26 +3,28 @@ import argparse
 
 
 def convert_bitness(args):
-    from bit_converter import bit_converter
-    bit_converter.convert_all(args.input,
-                              args.output,
-                              args.ext,
-                              bit_converter.convert_image_smart if args.smart else bit_converter.convert_image_simple)
+    from bit_converter.bit_converter import convert_all, convert_image_simple, convert_image_smart
+    convert_all(args.input, args.output, args.ext, convert_image_smart if args.smart else convert_image_simple)
 
 
 def compare_folders(args):
-    from duplicate_finder import duplicate_finder
-    duplicate_finder.compare_folders(args.original, args.newcome, args.sensitivity)
+    from duplicate_finder.duplicate_finder import compare_folders
+    compare_folders(args.original, args.newcome, args.sensitivity)
 
 
 def find_duplicates(args):
-    from duplicate_finder import duplicate_finder
-    duplicate_finder.delete_duplicates(args.path, args.sensitivity)
+    from duplicate_finder.duplicate_finder import delete_duplicates
+    delete_duplicates(args.path, args.sensitivity)
+
+
+def restore_original_names(args):
+    from duplicate_finder.duplicate_finder import restore_original_names
+    restore_original_names(args.path)
 
 
 def pull_files(args):
-    from files_puller import files_puller
-    files_puller.pull_files(args.path, args.output, args.ext)
+    from files_puller.files_puller import pull_files
+    pull_files(args.path, args.output, args.ext)
 
 
 def train_test_split(args):
@@ -31,17 +33,16 @@ def train_test_split(args):
 
 
 def unzip_all(args):
-    from unzip_all import unzip_all
-    unzip_all.unzip_all(args.path)
+    from unzip_all.unzip_all import unzip_all
+    unzip_all(args.path)
 
 
 def verify_sha_1(args):
-    from verify_sha1 import verify_sha1
-    verify_sha1.verify_sha1(args.path, args.shafile)
+    from verify_sha1.verify_sha1 import verify_sha1
+    verify_sha1(args.path, args.shafile)
 
 
 if __name__ == '__main__':
-
     parser_initial = argparse.ArgumentParser()
     subparsers = parser_initial.add_subparsers()
 
@@ -51,8 +52,7 @@ if __name__ == '__main__':
     parser_bit_convert.add_argument('--output', required=True, help="path to the folder with converted images")
     parser_bit_convert.add_argument('--ext', required=True, help="image_extension")
     group = parser_bit_convert.add_mutually_exclusive_group()
-    group.add_argument('--simple', help="simple and goes brrr", action="store_true")
-    group.add_argument('--smart', help="smart but goes slooow", action="store_true")
+    group.add_argument('--simple', help="force simple conversion without histogram evaluation", action="store_true")
     parser_bit_convert.set_defaults(func=convert_bitness)
 
     ### DUPLICATES
@@ -62,13 +62,17 @@ if __name__ == '__main__':
     parser_duplicate_folders = duplicate_subparsers.add_parser('compare_folders', help="compare_folders help")
     parser_duplicate_folders.add_argument('--original', required=True, help='path to the original folder')
     parser_duplicate_folders.add_argument('--newcome', required=True, help='path to the folder you want to join')
-    parser_duplicate_folders.add_argument('--sensitivity', required=True, help='sensitivity of detection')
+    parser_duplicate_folders.add_argument('--sensitivity', required=False, help='sensitivity of detection')
     parser_duplicate_folders.set_defaults(func=compare_folders)
 
     parser_duplicate_finder = duplicate_subparsers.add_parser('find', help="find duplicates help")
     parser_duplicate_finder.add_argument('--path', required=True, help="path to the folder with images to analyse")
-    parser_duplicate_finder.add_argument('--sensitivity', required=True, help='sensitivity of detection')
+    parser_duplicate_finder.add_argument('--sensitivity', required=False, help='sensitivity of detection')
     parser_duplicate_finder.set_defaults(func=find_duplicates)
+
+    parser_restore_original_names = duplicate_subparsers.add_parser('restore_names', help="restore original names help")
+    parser_restore_original_names.add_argument('--path', required=True, help='path to the images folder')
+    parser_restore_original_names.set_defaults(func=restore_original_names)
 
     ### PULL FILES
     parser_file_pulling = subparsers.add_parser('files_puller', help="files_puller help")
@@ -97,4 +101,5 @@ if __name__ == '__main__':
     parser_verify_sha1.set_defaults(func=verify_sha_1)
 
     arguments = parser_initial.parse_args()
-    # arguments.func(arguments)
+    arguments.func(arguments)
+

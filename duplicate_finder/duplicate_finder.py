@@ -2,6 +2,7 @@ import imagehash
 import os
 import hashlib
 import shutil
+import re
 from PIL import Image
 
 
@@ -32,6 +33,21 @@ def delete_strict_duplicates(image_dir):
             os.remove(os.path.join(image_dir, key))
             print(f"[{duplicated_counter}] Strictly duplicated images: {key}, {flipped[value]}. The latter has been removed.")
     print(f"Found {duplicated_counter} strict duplicates.")
+
+
+def restore_original_names(image_dir):
+    """
+    Restores original names, removing DUPLICATE_(...) from the beginning of affected files.
+    :param image_dir: path to images folder
+    """
+    pattern = r'DUPLICATE_[\d]*_(ORIG|DUPL)_'
+    counter = 0
+    for image in os.listdir(image_dir):
+        new_name = re.sub(pattern, '', image)
+        if new_name != image:
+            counter += 1
+            shutil.move(os.path.join(image_dir, image), os.path.join(image_dir, new_name))
+            print(f"[{counter}] Renaming [{image}] back to [{new_name}]")
 
 
 def delete_duplicates(image_dir, sensitivity):
@@ -102,6 +118,3 @@ def compare_folders(dir_a, dir_b, sensitivity):
                     shutil.move(os.path.join(dir_b, hashes_b[key]),
                                 os.path.join(duplicates_path, f'DUPLICATE_{counter}_DUPL_' + hashes_b[key]))
 
-actual_folder = r'data\converted'
-delete_duplicates(actual_folder)
-#compare_folders(r'c:\users\piotr\desktop\covid-combined-database\data\cr\ap-pa\covid', actual_folder)
