@@ -1,15 +1,13 @@
 #!python
-#C:\ProgramData\Anaconda3\python.exe
-
-import os
 import argparse
+
 
 def convert_bitness(args):
     from bit_converter import bit_converter
-    if args.simple:
-        bit_converter.convert_all(args.input, args.output, args.ext)
-    if args.smart:
-        pass
+    bit_converter.convert_all(args.input,
+                              args.output,
+                              args.ext,
+                              bit_converter.convert_image_smart if args.smart else bit_converter.convert_image_simple)
 
 
 def compare_folders(args):
