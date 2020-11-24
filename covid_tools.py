@@ -1,10 +1,9 @@
-#!python
+#!C:\ProgramData\Anaconda3\python.exe
 import argparse
-
 
 def convert_bitness(args):
     from bit_converter.bit_converter import convert_all, convert_image_simple, convert_image_smart
-    convert_all(args.input, args.output, args.ext, convert_image_smart if args.smart else convert_image_simple)
+    convert_all(args.input, args.output, args.ext, convert_image_simple if args.simple else convert_image_smart)
 
 
 def compare_folders(args):
@@ -40,6 +39,11 @@ def unzip_all(args):
 def verify_sha_1(args):
     from verify_sha1.verify_sha1 import verify_sha1
     verify_sha1(args.path, args.shafile)
+
+
+def split_by_modality(args):
+    from modality_splitter.modality_splitter import split_dataset_by_modality
+    split_dataset_by_modality(args.path, args.ext)
 
 
 if __name__ == '__main__':
@@ -99,6 +103,12 @@ if __name__ == '__main__':
     parser_verify_sha1.add_argument('--path', required=True, help="path to the folder containing files")
     parser_verify_sha1.add_argument('--shafile', required=True, help='path to the file containing sha1 hashes')
     parser_verify_sha1.set_defaults(func=verify_sha_1)
+
+    ### MODALITY SPLITTER
+    parser_modality_splitter = subparsers.add_parser('modality-splitter', help='modality-splitter help')
+    parser_modality_splitter.add_argument('--path', required=True, help="folderpath with images to split by modality")
+    parser_modality_splitter.add_argument('--ext', required=True, help="images extension")
+    parser_modality_splitter.set_defaults(func=split_by_modality)
 
     arguments = parser_initial.parse_args()
     arguments.func(arguments)
