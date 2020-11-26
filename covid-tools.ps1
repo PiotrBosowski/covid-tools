@@ -1,3 +1,3 @@
 conda activate base
-covid_tools.py $args
+covid_tools.py $args $pwd
 conda deactivate

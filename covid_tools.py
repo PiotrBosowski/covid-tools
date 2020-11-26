@@ -1,9 +1,17 @@
 #!C:\ProgramData\Anaconda3\python.exe
 import argparse
+import os
+import sys
+
 
 def convert_bitness(args):
     from bit_converter.bit_converter import convert_all, convert_image_simple, convert_image_smart
     convert_all(args.input, args.output, args.ext, convert_image_simple if args.simple else convert_image_smart)
+
+
+def flip_colors_wrapper(args):
+    from bit_converter.bit_converter import convert_all, flip_colors
+    convert_all(args.path, args.output, args.ext, flip_colors)
 
 
 def compare_folders(args):
@@ -51,13 +59,23 @@ if __name__ == '__main__':
     subparsers = parser_initial.add_subparsers()
 
     ### BIT CONVERSIONS
-    parser_bit_convert = subparsers.add_parser('bit_convert', help="bit_convert help")
-    parser_bit_convert.add_argument('--input', required=True, help="path to the folder with images to convert")
-    parser_bit_convert.add_argument('--output', required=True, help="path to the folder with converted images")
-    parser_bit_convert.add_argument('--ext', required=True, help="image_extension")
-    group = parser_bit_convert.add_mutually_exclusive_group()
+    parser_bit_convert = subparsers.add_parser('convert', help="bit_convert help")
+    bit_converter_subparsers = parser_bit_convert.add_subparsers()
+
+    parser_bitness_convert = bit_converter_subparsers.add_parser('bitness', help='convert bitness help')
+    parser_bitness_convert.add_argument('--input', required=True, help="path to the folder with images to convert")
+    parser_bitness_convert.add_argument('--output', required=True, help="path to the folder with converted images")
+    parser_bitness_convert.add_argument('--ext', required=True, help="image_extension")
+    group = parser_bitness_convert.add_mutually_exclusive_group()
     group.add_argument('--simple', help="force simple conversion without histogram evaluation", action="store_true")
-    parser_bit_convert.set_defaults(func=convert_bitness)
+    parser_bitness_convert.set_defaults(func=convert_bitness)
+
+    parser_color_flip = bit_converter_subparsers.add_parser('color-flip', help="color-flip help")
+    parser_color_flip.add_argument('--path', required=True, help='path to the image folder')
+    parser_color_flip.add_argument('--output', required=False, help='path to the output')
+    parser_color_flip.add_argument('--ext', required=True, help='images extension')
+    parser_color_flip.set_defaults(func=flip_colors_wrapper)
+
 
     ### DUPLICATES
     parser_duplicates = subparsers.add_parser('duplicates', help="duplicate_finder help")
@@ -109,6 +127,8 @@ if __name__ == '__main__':
     parser_modality_splitter.add_argument('--path', required=True, help="folderpath with images to split by modality")
     parser_modality_splitter.add_argument('--ext', required=True, help="images extension")
     parser_modality_splitter.set_defaults(func=split_by_modality)
+
+    os.chdir(sys.argv.pop())  # changes script location to the one from which wrapper was called
 
     arguments = parser_initial.parse_args()
     arguments.func(arguments)

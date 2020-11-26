@@ -37,7 +37,21 @@ def apply_window(pixels, window_bot, window_top, mean):
     pixels[(pixels > window_top) | (pixels < window_bot)] = mean
     pixels -= window_bot
     pixels *= (255.0 / window_top)
-    return Image.fromarray(np.uint8(pixels))
+    return pixels
+
+
+def flip_colors(image):
+    """
+    :param image:
+    :return:
+    """
+    image_arr = np.asarray(image)
+    img_min, img_max = np.min(image_arr), np.max(image_arr)
+    output_arr = apply_window(image_arr, img_min, img_max, (float(img_max) + float(img_min)) / 2)
+    img_max = np.max(output_arr)
+    output_arr *= -1
+    output_arr += img_max
+    return output_arr
 
 
 def convert_image_simple(image):
@@ -60,6 +74,8 @@ def convert_image_smart(image):
     :param image: input PIL.Image
     :return: PIL.Image with man-made marks replaced with the mean of the rest of the picture, window applied
     """
+    # todo: consider waaaay smaller number of bins OR counting zeros between islands
+    # todo: apply window also before calculating the histogram UPDATE: np.histogram already 'applies' window before binning
     image_arr = np.asarray(image)
     window_width = int((np.max(image_arr) - np.min(image_arr))/10)
     image_hist = np.histogram(image_arr, bins=window_width)
@@ -98,17 +114,19 @@ def convert_all(images_folder, output_folder, image_extension, function):
     error_counter = 0
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
-    for image in os.listdir(images_folder):
-        if image.endswith(image_extension):
+    for image_name in os.listdir(images_folder):
+        if image_name.endswith(image_extension):
             try:
-                output_path = os.path.join(output_folder, image)
-                if not os.path.exists(output_path):
-                    with Image.open(os.path.join(images_folder, image)) as image:
+                input_path = os.path.join(images_folder, image_name)
+                output_path = os.path.join(output_folder, image_name)
+                if not os.path.exists(output_path) or input_path == output_path:
+                    with Image.open(input_path) as image:
                         converted_img = function(image)
+                        converted_img = Image.fromarray(np.uint8(converted_img))
                         converted_img.save(output_path)
-            except UnidentifiedImageError:
+            except Exception as ex:
                 error_counter += 1
-                print(f'[{error_counter}] Error converting an image: {image}')
-                shutil.move(os.path.join('cr', image), os.path.join('errors', image))
+                print(f'[{error_counter}] Error converting an image: {image_name}', ex)
+                # shutil.move(os.path.join('cr', image_name), os.path.join('errors', image_name))
 
-# convert_all('D:\covid-19\playground', 'D:\covid-19\playground\output', '.png', convert_image_smart)
+convert_all(r'D:\playground3', r'D:\playground4', ".png", convert_image_smart)

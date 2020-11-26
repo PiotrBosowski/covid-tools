@@ -25,21 +25,41 @@ def get_model():
     return torch.load(model_path)
 
 
+# def split_dataset_by_modality(dataset_path, image_extension):
+#     for label in labels:
+#         os.makedirs(os.path.join(dataset_path, label), exist_ok=False)
+#     model = get_model().to('cpu')
+#     images = [os.path.join(dataset_path, image) for image in os.listdir(dataset_path) if image.endswith(image_extension)]
+#     with torch.no_grad():
+#         model.eval()
+#         for index, image in enumerate(images):
+#             try:
+#                 with Image.open(image).convert('RGB') as img:
+#                     transformed = transformer(img)
+#                     img_unsqueezed = transformed.unsqueeze(0)
+#                     prediction = model(img_unsqueezed)
+#                     _, prediction = torch.max(prediction, 1)
+#                     print([index + 1], labels[prediction.item()])
+#                 shutil.copy(image, os.path.join(dataset_path, labels[prediction.item()], os.path.basename(image)))
+#             except Exception as ex:
+#                 print(f"Error processing image {os.path.basename(image)}, {ex}")
+
 def split_dataset_by_modality(dataset_path, image_extension):
     for label in labels:
         os.makedirs(os.path.join(dataset_path, label), exist_ok=False)
-    model = get_model().to('cpu')
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    model = get_model().to(device)
     images = [os.path.join(dataset_path, image) for image in os.listdir(dataset_path) if image.endswith(image_extension)]
     with torch.no_grad():
         model.eval()
         for index, image in enumerate(images):
-            with Image.open(image).convert('RGB') as img:
-                transformed = transformer(img)
-                img_unsqueezed = transformed.unsqueeze(0)
-                prediction = model(img_unsqueezed)
-                _, prediction = torch.max(prediction, 1)
-                print([index], labels[prediction])
-            shutil.copy(image, os.path.join(dataset_path, labels[prediction], os.path.basename(image)))
-
-
-
+            try:
+                with Image.open(image).convert('RGB') as img:
+                    transformed = transformer(img)
+                    img_unsqueezed = transformed.unsqueeze(0)
+                    prediction = model(img_unsqueezed.to(device))
+                    _, prediction = torch.max(prediction, 1)
+                    print([index + 1], labels[prediction.item()])
+                shutil.copy(image, os.path.join(dataset_path, labels[prediction.item()], os.path.basename(image)))
+            except Exception as ex:
+                print(f"Error processing image {os.path.basename(image)}, {ex}")
