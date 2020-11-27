@@ -1,3 +1,34 @@
+import tarfile
+import os
+
+
+def unzip_all(folder_path):
+    for file in os.listdir(folder_path):
+        if file.endswith(".tar.gz"):
+            print(f"Unzipping file {file}...")
+            tar = tarfile.open(file, "r:gz")
+            tar.extractall()
+            tar.close()
+    print("Done.")
+
+
+
+def unzip_all(args):
+    from modules.unzipper import unzip_all
+    unzip_all(args.path)
+
+
+
+
+
+def verify_sha_1(args):
+    from modules.verify_sha1 import verify_sha1
+    verify_sha1(args.path, args.shafile)
+
+
+
+
+
 import os
 import hashlib
 

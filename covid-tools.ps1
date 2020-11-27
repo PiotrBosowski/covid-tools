@@ -1,3 +1,3 @@
 conda activate base
-covid_tools.py $args $pwd
+C:\ProgramData\Anaconda3\python.exe covid_tools.py $args $pwd
 conda deactivate

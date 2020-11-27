@@ -4,6 +4,14 @@ import numpy as np
 from PIL import Image, UnidentifiedImageError
 
 
+def bitness(args):
+    convert_all(args.input, args.output, args.ext, convert_image_simple if args.simple else convert_image_smart)
+
+
+def color_flip(args):
+    convert_all(args.path, args.output, args.ext, flip_colors)
+
+
 def get_island_boundaries(pixels, bin_min, bin_max):
     """
     Calculates real min- and max-pixel-values within one island that spans from bin_min to bin_max. Basing just on bins'
@@ -129,4 +137,6 @@ def convert_all(images_folder, output_folder, image_extension, function):
                 print(f'[{error_counter}] Error converting an image: {image_name}', ex)
                 # shutil.move(os.path.join('cr', image_name), os.path.join('errors', image_name))
 
-convert_all(r'D:\playground3', r'D:\playground4', ".png", convert_image_smart)
+
+if __name__ == "__main__":
+    convert_all(r'D:\playground3', r'D:\playground4', ".png", convert_image_smart)

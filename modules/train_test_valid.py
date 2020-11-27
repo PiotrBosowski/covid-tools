@@ -4,6 +4,12 @@ import shutil
 import random
 
 
+
+def split(args):
+    from modules.train_test_valid import split_into_train_test_valid
+    split_into_train_test_valid(args.path, args.test, args.valid, args.labels)
+
+
 def create_set(dataset_path, set_name, num_samples, labels, images):
   for label in labels:
     folder_path = os.path.join(dataset_path, set_name, label)

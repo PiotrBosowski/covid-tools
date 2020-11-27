@@ -5,6 +5,12 @@ import torchvision
 from fsplit.filesplit import Filesplit
 from PIL import Image
 
+
+def split_by_modality(args):
+    from modules.modalities import split_dataset_by_modality
+    split_dataset_by_modality(args.path, args.ext)
+
+
 labels = ['frontal-nega', 'frontal-posi', 'side-nega', 'side-posi']
 
 transformer = torchvision.transforms.Compose([
@@ -15,7 +21,7 @@ transformer = torchvision.transforms.Compose([
 
 
 def get_model():
-    model_folder = os.path.join(os.environ['CovidTools'], 'modality_splitter', 'model')
+    model_folder = os.path.join(os.environ['CovidTools'], 'mod_split_model', '../mod_split_model/model')
     model_path = os.path.join(model_folder, 'model.pt')
     if not os.path.exists(model_path):
         fs = Filesplit()
