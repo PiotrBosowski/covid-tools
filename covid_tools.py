@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-from modules import convert, duplicates, files_puller, modalities, train_test_valid, unzipper
+from modules import convert, duplicates, files_puller, modalities, train_test_valid, unzipper, labels
 
 
 if __name__ == '__main__':
@@ -52,6 +52,17 @@ if __name__ == '__main__':
     parser_file_pulling.add_argument('--output', required=True, help="path to the output folder")
     parser_file_pulling.add_argument('--ext', required=True, help="images extension")
     parser_file_pulling.set_defaults(func=files_puller.pull_files)
+
+    # LABELS
+    parser_labels = subparsers.add_parser('labels', help="split files to folders according to their labels")
+    parser_labels.add_argument('--path', required=True, help='path to the images folder')
+    parser_labels.add_argument('--meta', required=True, help='metadata file')
+    parser_labels.add_argument('--output', required=True, help='output folder')
+    parser_labels.add_argument('--label-col', required=True, help='column that holds labels')
+    parser_labels.add_argument('--file-col', required=True, help='column that holds filenames')
+    parser_labels.add_argument('--ext', required=True, help='images extension')
+    # OPTIONAL: TODO DRY RUN
+    parser_labels.set_defaults(func=labels.group)
 
     # MODALITIES
     parser_modality_splitter = subparsers.add_parser('modality-splitter', help='categorize images by modality')
