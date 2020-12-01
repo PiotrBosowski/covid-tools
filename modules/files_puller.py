@@ -3,7 +3,6 @@ import shutil
 
 
 def pull_files(args):
-    from modules.files_puller import pull_files
     pull_files(args.path, args.output, args.ext)
 
 

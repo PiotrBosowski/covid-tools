@@ -7,7 +7,6 @@ from PIL import Image
 
 
 def split_by_modality(args):
-    from modules.modalities import split_dataset_by_modality
     split_dataset_by_modality(args.path, args.ext)
 
 

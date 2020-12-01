@@ -7,17 +7,14 @@ from PIL import Image
 
 
 def compare_folders(args):
-    from modules.duplicates import compare_folders
     compare_folders(args.original, args.newcome, args.sensitivity)
 
 
 def find_duplicates(args):
-    from modules.duplicates import delete_duplicates
     delete_duplicates(args.path, args.sensitivity)
 
 
 def restore_original_names(args):
-    from modules.duplicates import restore_original_names
     restore_original_names(args.path)
 
 

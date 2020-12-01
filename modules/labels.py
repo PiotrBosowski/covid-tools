@@ -1,4 +1,3 @@
-import zipfile
 import csv
 import shutil
 import os
