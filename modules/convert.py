@@ -11,6 +11,21 @@ def color_flip(args):
     convert_all(args.path, args.output, args.ext, flip_colors)
 
 
+def extension(args):
+    extension_impl(args.path, args.output, args.ext_in, args.ext_out)
+
+
+def extension_impl(input_dir, output_dir, extension_in, extension_out):
+    if 'dcm' in extension_in and 'png' in extension_out:
+        images = [os.path.join(input_dir, image) for image in os.listdir(input_dir) if image.endswith(extension_in)
+                  and os.path.isfile(os.path.join(input_dir, image))]
+        if images:
+            print(f'med2image -i {images[-1]} -d {output_dir} --outputFileType {extension_out}')
+            os.system(f'med2image -i {images[-1]} -d {output_dir} --outputFileType {extension_out}')
+        else:
+            print("no images to convert")
+
+
 def get_island_boundaries(pixels, bin_min, bin_max):
     """
     Calculates real min- and max-pixel-values within one island that spans from bin_min to bin_max. Basing just on bins'
