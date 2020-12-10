@@ -55,11 +55,21 @@ def apply_window(pixels, window_bot, window_top, mean):
     :param mean: mean of the window
     :return: Image, in which pixels that fitted [window-bot, window-top] span across whole pixelspace (0-255 for 8-bits)
     """
-    pixels = pixels.astype('float32')
+    pixels = pixels.astype(np.float64)
+    # clipping the image would be OK as well
     pixels[(pixels > window_top) | (pixels < window_bot)] = mean
     pixels -= window_bot
-    pixels *= (255.0 / window_top)
-    return pixels
+    window_top -= window_bot
+    # DANGER: performing this step makes image human-readable, but is also
+    # introduces some irregularities in the image histogram (trying to extend
+    # (0, n) range to cover whole (0, 255) will result in histogram-holes if
+    # n < 255). TODO: think about giving up on it -> float processing framework
+    try:
+        pixels *= (255.0 / window_top)
+    except ZeroDivisionError:
+        pixels = np.zeros_like(pixels)
+    # pixels can sometimes
+    return np.around(pixels)
 
 
 def flip_colors(image):
@@ -87,7 +97,7 @@ def convert_image_simple(image):
     return apply_window(pixels, img_min, img_max, (img_max + img_min) / 2)
 
 
-def convert_image_smart(image):
+def convert_image_smart(image, max_gap_percent=0.02):
     """
     Check image's histogram in search of outlaying pixel-values, that almost certainly represent human-made marks,
     highlights, captions. These artificially introduced pixels can harm regular window applying, because they may
@@ -96,22 +106,29 @@ def convert_image_smart(image):
     :param image: input PIL.Image
     :return: PIL.Image with man-made marks replaced with the mean of the rest of the picture, window applied
     """
-    # todo: consider waaaay smaller number of bins OR counting zeros between islands
-    # todo: apply window also before calculating the histogram UPDATE: np.histogram already 'applies' window before binning
     image_arr = np.asarray(image)
-    window_width = int((np.max(image_arr) - np.min(image_arr))/10)
+    window_width = 255#int((np.max(image_arr) - np.min(image_arr)))
+    max_gap = int(window_width * max_gap_percent)  # max acceptable distance between two islands
     image_hist = np.histogram(image_arr, bins=window_width)
     islands = []  # find islands in picture's histogram
+    gap_counter = 0
+    last_pixel = -1
     is_island = False
     for index, pixel_count in enumerate(image_hist[0]):
         if pixel_count != 0 and not is_island:
             is_island = True
             islands.append({'begin': image_hist[1][index], 'end': image_hist[1][-1], 'area': pixel_count})
         elif pixel_count != 0 and is_island:
+            gap_counter = 0
             islands[-1]['area'] += pixel_count
         elif pixel_count == 0 and is_island:
-            is_island = False
-            islands[-1]['end'] = image_hist[1][index]
+            if gap_counter == 0:
+                last_pixel = index - 1  # if just got out of island, remember the position
+            gap_counter += 1
+            if gap_counter > max_gap:
+                gap_counter = 0
+                is_island = False
+                islands[-1]['end'] = image_hist[1][last_pixel]
         elif pixel_count == 0 and not is_island:
             continue
     if not islands:
@@ -124,7 +141,7 @@ def convert_image_smart(image):
     return apply_window(image_arr, real_min, real_max, dominant_mean)
 
 
-def convert_all(images_folder, output_folder, image_extension, function):
+def convert_all(images_folder, output_folder, image_extension, function, verbose=False):
     """
     Applies function to all images with extension image_extension from images_folder and saves them in output_folder.
     Original pictures remain unchanged.
@@ -141,11 +158,14 @@ def convert_all(images_folder, output_folder, image_extension, function):
             try:
                 input_path = os.path.join(images_folder, image_name)
                 output_path = os.path.join(output_folder, image_name)
+                if verbose:
+                    print(f'Converting {input_path} -> {output_path}')
                 if not os.path.exists(output_path) or input_path == output_path:
                     with Image.open(input_path) as image:
                         converted_img = function(image)
                         converted_img = Image.fromarray(np.uint8(converted_img))
                         converted_img.save(output_path)
+
             except Exception as ex:
                 error_counter += 1
                 print(f'[{error_counter}] Error converting an image: {image_name}', ex)
@@ -153,4 +173,5 @@ def convert_all(images_folder, output_folder, image_extension, function):
 
 
 if __name__ == "__main__":
-    convert_all(r'D:\playground3', r'D:\playground4', ".png", convert_image_smart)
+    convert_all('/home/peter/covid/playground/histogram_plgnd',
+                '/home/peter/covid/playground/histogram_plgnd_out_out', ".png", convert_image_smart, verbose=True)

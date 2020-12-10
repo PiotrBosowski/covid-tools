@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-from modules.convert import bitness, color_flip
+from modules.convert import bitness, color_flip, extension
 from modules.duplicates import compare_folders, find_duplicates, restore_original_names
 from modules.files_puller import pull_files
 from modules.labels import group
@@ -31,6 +31,13 @@ if __name__ == '__main__':
     parser_color_flip.add_argument('--output', required=False, help='path to the output folder')
     parser_color_flip.add_argument('--ext', required=True, help='images extension')
     parser_color_flip.set_defaults(func=color_flip)
+
+    parser_extension = bit_converter_subparsers.add_parser('format', help="changes the format of all files within directory")
+    parser_extension.add_argument('--path', required=True, help='path to the image folder')
+    parser_extension.add_argument('--output', required=False, help='path to the output folder')
+    parser_extension.add_argument('--ext-in', required=True, help='input extension')
+    parser_extension.add_argument('--ext-out', required=True, help='output extension')
+    parser_extension.set_defaults(func=extension)
 
     # DUPLICATES
     parser_duplicates = subparsers.add_parser('duplicates', help="find duplicates and similar images")
