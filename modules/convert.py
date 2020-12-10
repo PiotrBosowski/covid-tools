@@ -97,7 +97,7 @@ def convert_image_simple(image):
     return apply_window(pixels, img_min, img_max, (img_max + img_min) / 2)
 
 
-def convert_image_smart(image, max_gap_percent=0.02):
+def convert_image_smart(image, max_gap_percent=0.03):
     """
     Check image's histogram in search of outlaying pixel-values, that almost certainly represent human-made marks,
     highlights, captions. These artificially introduced pixels can harm regular window applying, because they may
@@ -107,7 +107,7 @@ def convert_image_smart(image, max_gap_percent=0.02):
     :return: PIL.Image with man-made marks replaced with the mean of the rest of the picture, window applied
     """
     image_arr = np.asarray(image)
-    window_width = 255#int((np.max(image_arr) - np.min(image_arr)))
+    window_width = int((np.max(image_arr) - np.min(image_arr)))
     max_gap = int(window_width * max_gap_percent)  # max acceptable distance between two islands
     image_hist = np.histogram(image_arr, bins=window_width)
     islands = []  # find islands in picture's histogram
@@ -165,7 +165,6 @@ def convert_all(images_folder, output_folder, image_extension, function, verbose
                         converted_img = function(image)
                         converted_img = Image.fromarray(np.uint8(converted_img))
                         converted_img.save(output_path)
-
             except Exception as ex:
                 error_counter += 1
                 print(f'[{error_counter}] Error converting an image: {image_name}', ex)
@@ -173,5 +172,5 @@ def convert_all(images_folder, output_folder, image_extension, function, verbose
 
 
 if __name__ == "__main__":
-    convert_all('/home/peter/covid/playground/histogram_plgnd',
-                '/home/peter/covid/playground/histogram_plgnd_out_out', ".png", convert_image_smart, verbose=True)
+    convert_all('/home/peter/covid/playground/histogram_plgnd/',
+                '/home/peter/covid/playground/histogram_plgnd_out', ".png", convert_image_smart, verbose=True)
