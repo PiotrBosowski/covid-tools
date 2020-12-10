@@ -65,10 +65,11 @@ def apply_window(pixels, window_bot, window_top, mean):
     # (0, n) range to cover whole (0, 255) will result in histogram-holes if
     # n < 255). TODO: think about giving up on it -> float processing framework
     try:
-        pixels *= (255.0 / window_top)
+        # casting to regular float to prevent numpy from performing this division
+        # and let python handle zero-division error
+        pixels *= (255.0 / float(window_top))
     except ZeroDivisionError:
         pixels = np.zeros_like(pixels)
-    # pixels can sometimes
     return np.around(pixels)
 
 
