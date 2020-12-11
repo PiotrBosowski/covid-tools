@@ -4,7 +4,7 @@ import sys
 from modules.convert import bitness, color_flip, extension
 from modules.duplicates import compare_folders, find_duplicates, restore_original_names
 from modules.files_puller import pull_files
-from modules.labels import group
+from modules.labels import group_labels
 from modules.modalities import split_by_modality
 from modules.train_test_valid import split
 from modules.unzipper import unzip_all, verify_sha1_impl
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     parser_labels.add_argument('--file-col', required=True, help='column that holds filenames')
     parser_labels.add_argument('--ext', required=True, help='images extension')
     # OPTIONAL: TODO DRY RUN
-    parser_labels.set_defaults(func=group)
+    parser_labels.set_defaults(func=group_labels)
 
     # MODALITIES
     parser_modality_splitter = subparsers.add_parser('modality-splitter', help='categorize images by modality')

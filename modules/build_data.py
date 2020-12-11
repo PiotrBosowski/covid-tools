@@ -5,19 +5,20 @@ import shutil
 
 def build_data(input_path, output_path):
     """
-    This script checks all directories in input_path directory in search of inner
-    'data' directories - these are supposed to contain label-named directories.
-    Script builds merged 'data' directory in the output_path location and creates
-    a .csv file that allows for backtracking the origin of particular picture and
-    prevents from naming collision.
+    This script checks all directories in input_path directory in search
+    of inner 'data' directories - these are supposed to contain label-
+    -named directories. Script builds merged 'data' directory in the
+    output_path location and creates a .csv file that allows for back-
+    tracking the origin of particular picture and prevents naming
+    collisions.
     """
-    datasets = [os.path.join(input_path, directory) for directory in os.listdir(input_path)]
-    buildable_datasets = [dataset for dataset in datasets
-                          if os.path.exists(os.path.join(dataset, 'data'))]
+    datasets = [os.path.join(input_path, dir)
+                for dir in os.listdir(input_path)
+                if os.path.exists(os.path.join(dir, 'data'))]
     with open(os.path.join(output_path, 'origins.csv'), 'x') as csv_file:
         csv_writer = csv.DictWriter(csv_file, ['new_path', 'origin_path'])
         csv_writer.writeheader()
-        for dataset in buildable_datasets:
+        for dataset in datasets:
             print(os.path.basename(dataset))
             for label in os.listdir(os.path.join(dataset, 'data')):
                 print('\t', label, end=' ')
@@ -35,12 +36,14 @@ def build_data(input_path, output_path):
                     else:
                         counter = 1
                         while True:
-                            new_name = os.path.join(output_file_path, str(counter))
+                            new_name = os.path.join(output_file_path,
+                                                    str(counter))
                             if not os.path.exists(new_name):
                                 shutil.copy(input_file_path, output_file_path)
                                 break
                             counter += 1
-                    csv_writer.writerow({'new_path': output_file_path, 'origin_path': input_file_path})
+                    csv_writer.writerow({'new_path': output_file_path,
+                                         'origin_path': input_file_path})
                     items += 1
                 print(items)
 
