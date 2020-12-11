@@ -20,7 +20,7 @@ transformer = torchvision.transforms.Compose([
 
 
 def get_model():
-    model_folder = os.path.join(os.environ['CovidTools'], 'mod_split_model', '../mod_split_model/model')
+    model_folder = os.path.join(os.environ['CovidTools'], 'mod_split_model')
     model_path = os.path.join(model_folder, 'model.pt')
     if not os.path.exists(model_path):
         fs = Filesplit()
@@ -51,7 +51,7 @@ def get_model():
 
 def split_dataset_by_modality(dataset_path, image_extension):
     for label in labels:
-        os.makedirs(os.path.join(dataset_path, label), exist_ok=False)
+        os.makedirs(os.path.join(dataset_path, label), exist_ok=True)
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     model = get_model().to(device)
     images = [os.path.join(dataset_path, image) for image in os.listdir(dataset_path) if image.endswith(image_extension)]
@@ -68,3 +68,6 @@ def split_dataset_by_modality(dataset_path, image_extension):
                 shutil.copy(image, os.path.join(dataset_path, labels[prediction.item()], os.path.basename(image)))
             except Exception as ex:
                 print(f"Error processing image {os.path.basename(image)}, {ex}")
+
+if __name__ == '__main__':
+    split_dataset_by_modality('/home/peter/media/data/covid-19/cr/03_BIMCV-COVID-19-nega/converted/covid-or-healthy', '.png')

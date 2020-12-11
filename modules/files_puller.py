@@ -3,10 +3,10 @@ import shutil
 
 
 def pull_files(args):
-    pull_files(args.path, args.output, args.ext)
+    pull_files_impl(args.path, args.output, args.ext)
 
 
-def pull_files(input_folder, output_folder, extension):
+def pull_files_impl(input_folder, output_folder, extension):
     for root, dirs, files in os.walk(input_folder):
         for file in files:
             if file.endswith(extension):

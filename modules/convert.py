@@ -4,7 +4,8 @@ from PIL import Image
 
 
 def bitness(args):
-    convert_all(args.input, args.output, args.ext, convert_image_simple if args.simple else convert_image_smart)
+    convert_all(args.input, args.output, args.ext,
+                convert_image_simple if args.simple else convert_image_smart)
 
 
 def color_flip(args):
@@ -17,11 +18,14 @@ def extension(args):
 
 def extension_impl(input_dir, output_dir, extension_in, extension_out):
     if 'dcm' in extension_in and 'png' in extension_out:
-        images = [os.path.join(input_dir, image) for image in os.listdir(input_dir) if image.endswith(extension_in)
+        images = [os.path.join(input_dir, image) for image in
+                  os.listdir(input_dir) if image.endswith(extension_in)
                   and os.path.isfile(os.path.join(input_dir, image))]
         if images:
-            print(f'med2image -i {images[-1]} -d {output_dir} --outputFileType {extension_out}')
-            os.system(f'med2image -i {images[-1]} -d {output_dir} --outputFileType {extension_out}')
+            print(
+                f'med2image -i {images[-1]} -d {output_dir} --outputFileType {extension_out}')
+            os.system(
+                f'med2image -i {images[-1]} -d {output_dir} --outputFileType {extension_out}')
         else:
             print("no images to convert")
 
@@ -80,7 +84,8 @@ def flip_colors(image):
     """
     image_arr = np.asarray(image)
     img_min, img_max = np.min(image_arr), np.max(image_arr)
-    output_arr = apply_window(image_arr, img_min, img_max, (float(img_max) + float(img_min)) / 2)
+    output_arr = apply_window(image_arr, img_min, img_max,
+                              (float(img_max) + float(img_min)) / 2)
     img_max = np.max(output_arr)
     output_arr *= -1
     output_arr += img_max
@@ -98,18 +103,11 @@ def convert_image_simple(image):
     return apply_window(pixels, img_min, img_max, (img_max + img_min) / 2)
 
 
-def convert_image_smart(image, max_gap_percent=0.03):
-    """
-    Check image's histogram in search of outlaying pixel-values, that almost certainly represent human-made marks,
-    highlights, captions. These artificially introduced pixels can harm regular window applying, because they may
-    significantly widen pixelspace, forcing the data itself to occupy only few percents of pixelspace.
-    TODO: Introduce checking the islands by calculating their variances - low variance == bad.
-    :param image: input PIL.Image
-    :return: PIL.Image with man-made marks replaced with the mean of the rest of the picture, window applied
-    """
-    image_arr = np.asarray(image)
+def find_islands(image_arr, max_gap_percent):
     window_width = int((np.max(image_arr) - np.min(image_arr)))
     max_gap = int(window_width * max_gap_percent)  # max acceptable distance between two islands
+    if window_width == 0:
+        return [{'begin': np.min(image_arr), 'end': np.min(image_arr), 'area': 100}]  # if image is flat, return island with dummy area
     image_hist = np.histogram(image_arr, bins=window_width)
     islands = []  # find islands in picture's histogram
     gap_counter = 0
@@ -118,7 +116,9 @@ def convert_image_smart(image, max_gap_percent=0.03):
     for index, pixel_count in enumerate(image_hist[0]):
         if pixel_count != 0 and not is_island:
             is_island = True
-            islands.append({'begin': image_hist[1][index], 'end': image_hist[1][-1], 'area': pixel_count})
+            islands.append(
+                {'begin': image_hist[1][index], 'end': image_hist[1][-1],
+                 'area': pixel_count})
         elif pixel_count != 0 and is_island:
             gap_counter = 0
             islands[-1]['area'] += pixel_count
@@ -135,14 +135,36 @@ def convert_image_smart(image, max_gap_percent=0.03):
     if not islands:
         raise Exception("empty image")
     islands.sort(key=lambda isl: isl['area'], reverse=False)
-    max_pix = islands[-1]['end']
-    min_pix = islands[-1]['begin']
-    real_min, real_max = get_island_boundaries(image_arr, min_pix, max_pix)
-    dominant_mean = (max_pix + min_pix) / 2
-    return apply_window(image_arr, real_min, real_max, dominant_mean)
+    return islands
 
 
-def convert_all(images_folder, output_folder, image_extension, function, verbose=False):
+
+def convert_image_smart(image, max_gap_percent=0.05, max_iterations=3):
+    """
+    Check image's histogram in search of outlaying pixel-values, that almost certainly represent human-made marks,
+    highlights, captions. These artificially introduced pixels can harm regular window applying, because they may
+    significantly widen pixelspace, forcing the data itself to occupy only few percents of pixelspace.
+    TODO: Introduce checking the islands by calculating their variances - low variance == bad.
+    TODO: Instead of replacing pixels with mean value, replace them with
+    TODO: uniformly distributed noise to prevent spikes in histogram.
+    :param image: input PIL.Image
+    :return: PIL.Image with man-made marks replaced with the mean of the rest of the picture, window applied
+    """
+    image_arr = np.asarray(image)
+    for index in range(max_iterations):
+        islands = find_islands(image_arr, max_gap_percent)
+        max_pix = islands[-1]['end']
+        min_pix = islands[-1]['begin']
+        real_min, real_max = get_island_boundaries(image_arr, min_pix, max_pix)
+        dominant_mean = (float(real_min) + float(real_max)) / 2
+        image_arr = apply_window(image_arr, real_min, real_max, dominant_mean)
+        # if len(islands) == 1:
+        #     return image_arr
+    return image_arr
+
+
+def convert_all(images_folder, output_folder, image_extension, function,
+                verbose=False):
     """
     Applies function to all images with extension image_extension from images_folder and saves them in output_folder.
     Original pictures remain unchanged.
@@ -151,27 +173,35 @@ def convert_all(images_folder, output_folder, image_extension, function, verbose
     :param image_extension: extension of the images to transform
     :param function: transformation function
     """
+    output_ext = '.png'
     error_counter = 0
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
-    for image_name in os.listdir(images_folder):
-        if image_name.endswith(image_extension):
-            try:
-                input_path = os.path.join(images_folder, image_name)
-                output_path = os.path.join(output_folder, image_name)
-                if verbose:
-                    print(f'Converting {input_path} -> {output_path}')
-                if not os.path.exists(output_path) or input_path == output_path:
-                    with Image.open(input_path) as image:
-                        converted_img = function(image)
-                        converted_img = Image.fromarray(np.uint8(converted_img))
-                        converted_img.save(output_path)
-            except Exception as ex:
-                error_counter += 1
-                print(f'[{error_counter}] Error converting an image: {image_name}', ex)
-                # shutil.move(os.path.join('cr', image_name), os.path.join('errors', image_name))
+    os.makedirs(output_folder, exist_ok=True)
+    images = [img for img in os.listdir(images_folder)
+              if os.path.isfile(os.path.join(images_folder, img))
+              and image_extension == 'all' or img.endswith(image_extension)]
+    for image_name in images:
+        try:
+            input_path = os.path.join(images_folder, image_name)
+            image_name, _ = os.path.splitext(image_name)
+            output_path = os.path.join(output_folder, image_name + output_ext)
+            if verbose:
+                print(f'Converting {input_path} -> {output_path}')
+            if not os.path.exists(
+                    output_path) or input_path == output_path:
+                with Image.open(input_path).convert('RGB') as image: # dropping ALPHA channel
+                    converted_img = function(image)
+                    converted_img = Image.fromarray(
+                        np.uint8(converted_img))
+                    converted_img.save(output_path)
+        except Exception as ex:
+            error_counter += 1
+            print(
+                f'[{error_counter}] Error converting an image: {image_name}',
+                ex)
+            # shutil.move(os.path.join('cr', image_name), os.path.join('errors', image_name))
 
 
 if __name__ == "__main__":
-    convert_all('/home/peter/covid/playground/histogram_plgnd/',
-                '/home/peter/covid/playground/histogram_plgnd_out', ".png", convert_image_smart, verbose=True)
+    convert_all('/home/peter/covid/playground/nowy',
+                '/home/peter/covid/playground/nowy/nt', ".png",
+                convert_image_smart, verbose=True)

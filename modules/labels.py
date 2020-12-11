@@ -25,7 +25,7 @@ def group(args):
                 image_name = add_extension_if_lacking(row[args.file_col], args.ext)
                 metadata_included_files.append(image_name)
                 image_path = os.path.join(args.path, image_name)
-                if os.path.exists(image_path):
+                if os.path.isfile(image_path):
                     label = normalize_folder_name(row[args.label_col])
                     output_path = os.path.join(args.output, label)
                     os.makedirs(output_path, exist_ok=True)
