@@ -11,7 +11,7 @@ def compare_folders(args):
 
 
 def find_duplicates(args):
-    delete_duplicates(args.path, args.sensitivity)
+    delete_duplicates(args.path, args.skip_strict)
 
 
 def restore_original_names(args):
@@ -70,7 +70,7 @@ def restore_original_names(image_dir):
             print(f"[{counter}] Renaming [{image}] back to [{new_name}]")
 
 
-def delete_duplicates(image_dir, sensitivity):
+def delete_duplicates(image_dir, skip_strict):
     """
     Detects duplicates and moves them to 'duplicates' folder. Originals
     are also copied to the folder for easier visual comparison. Uses
@@ -78,7 +78,8 @@ def delete_duplicates(image_dir, sensitivity):
     http://www.hackerfactor.com/blog/index.php?/archives/432-Looks-Like-It.html
     :param image_dir:
     """
-    delete_strict_duplicates(image_dir)
+    if not skip_strict:
+        delete_strict_duplicates(image_dir)
     counter = 0
     for hash_size in [16]:
         for highfreq_factor in [3]:
