@@ -7,7 +7,7 @@ from PIL import Image
 
 
 def compare_folders(args):
-    compare_folders(args.original, args.newcome, args.sensitivity)
+    compare_folders_impl(args.original, args.newcome, args.sensitivity)
 
 
 def find_duplicates(args):
@@ -80,12 +80,13 @@ def delete_duplicates(image_dir, sensitivity):
     """
     delete_strict_duplicates(image_dir)
     counter = 0
-    for hash_size in [12, 6]:
-        for highfreq_factor in [3, 2]:
+    for hash_size in [16]:
+        for highfreq_factor in [3]:
             print(f"[hash_size={hash_size}]"
                   f"[highfreq_factor={highfreq_factor}]")
             images = {}
-            for image in sorted(os.listdir(image_dir)):
+            for ind, image in enumerate(sorted(os.listdir(image_dir))):
+                print(ind)
                 if os.path.isfile(os.path.join(image_dir, image)):
                     images[image] = imagehash.phash(
                         Image.open(os.path.join(image_dir, image)),
@@ -112,7 +113,7 @@ def delete_duplicates(image_dir, sensitivity):
                                     f'DUPLICATE_{counter}_DUPL_' + key))
 
 
-def compare_folders(dir_a, dir_b, sensitivity):
+def compare_folders_impl(dir_a, dir_b, sensitivity):
     """
     Compares two folders looking for images in dir_b that already exists
     in dir_a. When such image is found, it is moved to the
@@ -125,8 +126,8 @@ def compare_folders(dir_a, dir_b, sensitivity):
     :param compared_dir: dir to be joined
     """
     counter = 0
-    for hash_size in [12, 6]:
-        for highfreq_factor in [3, 2]:
+    for hash_size in [16]:
+        for highfreq_factor in [3]:
             print(f"[hash_size={hash_size}]"
                   f"[highfreq_factor={highfreq_factor}]")
             hashes_a = {imagehash.phash(Image.open(os.path.join(dir_a, image)),

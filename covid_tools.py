@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 from modules.convert import bitness, color_flip, extension
-from modules.duplicates import compare_folders, find_duplicates, restore_original_names
+from modules.duplicates import compare_folders_impl, find_duplicates, restore_original_names
 from modules.files_puller import pull_files
 from modules.labels import group_labels
 from modules.modalities import split_by_modality
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     parser_duplicate_folders.add_argument('--original', required=True, help='path to the original folder')
     parser_duplicate_folders.add_argument('--newcome', required=True, help='path to the folder you want to join')
     parser_duplicate_folders.add_argument('--sensitivity', required=False, help='0-low, 4-high')
-    parser_duplicate_folders.set_defaults(func=compare_folders)
+    parser_duplicate_folders.set_defaults(func=compare_folders_impl)
 
     parser_duplicate_finder = duplicate_subparsers.add_parser('find', help="find suplicates within one folder")
     parser_duplicate_finder.add_argument('--path', required=True, help="path to the folder")
