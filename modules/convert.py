@@ -23,19 +23,23 @@ def extension_impl(input_dir, output_dir, extension_in, extension_out):
                   and os.path.isfile(os.path.join(input_dir, image))]
         if images:
             print(
-                f'med2image -i {images[-1]} -d {output_dir} --outputFileType {extension_out}')
+                f'med2image -i {images[-1]} -d {output_dir} '
+                f'--outputFileType {extension_out}')
             os.system(
-                f'med2image -i {images[-1]} -d {output_dir} --outputFileType {extension_out}')
+                f'med2image -i {images[-1]} -d {output_dir} '
+                f'--outputFileType {extension_out}')
         else:
             print("no images to convert")
 
 
 def get_island_boundaries(pixels, bin_min, bin_max):
     """
-    Calculates real min- and max-pixel-values within one island that spans from bin_min to bin_max. Basing just on bins'
-    applying window of just bin_max and bin_min may cause image flattening, because real max- and min-pixel-values
-    are usually slightly different from highest bin's upper bound and lowest bin's lower bound (especially when low
-    number of bins).
+    Calculates real min- and max-pixel-values within one island that
+    spans from bin_min to bin_max. Basing just on bins' applying window
+    of just bin_max and bin_min may cause image flattening, because real
+    max- and min-pixel-values are usually slightly different from
+    highest bin's upper bound and lowest bin's lower bound (especially
+    with low number of bins).
     :param pixels: input image as numpy array
     :param bin_min: lower bound of lowest bin
     :param bin_max: upper bound value of highest bin
@@ -50,27 +54,31 @@ def get_island_boundaries(pixels, bin_min, bin_max):
 
 def apply_window(pixels, window_bot, window_top, mean):
     """
-    Applies linear transformation to the image, forcing all pixels to spread across whole pixelspace (0-255 for 8-bit
-    picture). Everything outside the window (i.e. outliers) is replaced with the mean; if window_bot == lowest pixel
-    value and window_top == highest pixel value, then no replacements take place.
+    Applies linear transformation to the image, forcing all pixels to
+    spread across whole pixelspace (0-255 for 8-bit picture). Everything
+    outside the window (i.e. outliers) is replaced with the mean;
+    if window_bot == lowest pixel value and window_top == highest pixel
+    value, then no replacements take place.
     :param pixels: input image as numpy array
     :param window_bot: lower bound of the window
     :param window_top: upper bound of the window
     :param mean: mean of the window
-    :return: Image, in which pixels that fitted [window-bot, window-top] span across whole pixelspace (0-255 for 8-bits)
+    :return: Image, in which pixels that fitted [window-bot, window-top]
+    span across whole pixelspace (0-255 for 8-bits)
     """
     pixels = pixels.astype(np.float64)
     # clipping the image would be OK as well
     pixels[(pixels > window_top) | (pixels < window_bot)] = mean
     pixels -= window_bot
     window_top -= window_bot
-    # DANGER: performing this step makes image human-readable, but is also
-    # introduces some irregularities in the image histogram (trying to extend
-    # (0, n) range to cover whole (0, 255) will result in histogram-holes if
-    # n < 255). TODO: think about giving up on it -> float processing framework
+    # DANGER: performing this step makes image human-readable, but it
+    # also introduces some irregularities in the image histogram (trying
+    # to extend (0, n) range to cover whole (0, 255) will result in
+    # histogram-holes if n < 255).
+    # TODO: think about giving up on it -> float processing framework
     try:
-        # casting to regular float to prevent numpy from performing this division
-        # and let python handle zero-division error
+        # casting to regular float to prevent numpy from performing this
+        # division and let python handle zero-division error
         pixels *= (255.0 / float(window_top))
     except ZeroDivisionError:
         pixels = np.zeros_like(pixels)
@@ -79,8 +87,9 @@ def apply_window(pixels, window_bot, window_top, mean):
 
 def flip_colors(image):
     """
-    :param image:
-    :return:
+    Inverts image colors.
+    :param image: PIL image to be converted
+    :return: numpy array
     """
     image_arr = np.asarray(image)
     img_min, img_max = np.min(image_arr), np.max(image_arr)
@@ -94,9 +103,11 @@ def flip_colors(image):
 
 def convert_image_simple(image):
     """
-    Applies window to the image, priorly calculating image min- and max-pixel-values. No replacements take place.
+    Applies window to the image, priorly calculating image min- and
+    max-pixel-values. It's sometimes called 'clipping' the image.
     :param image: input image as PIL.Image
-    :return: PIL.Image with pixels spreading across whole pixelspace (0-255 for 8-bit pictures)
+    :return: PIL.Image with pixels spreading across whole pixelspace
+    (0-255 for 8-bit pictures)
     """
     pixels = np.asarray(image)
     img_min, img_max = np.min(pixels), np.max(pixels)
@@ -104,10 +115,25 @@ def convert_image_simple(image):
 
 
 def find_islands(image_arr, max_gap_percent):
+    """
+    Finds histogram islands, which in many applications are a sign of
+    an image being corrupted with some human-made marks, signs, etc.
+    Sorts the islands according to their size, hoping for that the
+    biggest island will be the actual content (which most usually is
+    the case). Ideas: Introduce checking the islands by calculating
+    their variances - low variance == bad.
+    :param image_arr: image to be processed
+    :param max_gap_percent: maximum distance between islands expressed
+    in % of image span (span = max - min pixel values).
+    :return: list of image's islands; original image stays unmodified
+    """
     window_width = int((np.max(image_arr) - np.min(image_arr)))
-    max_gap = int(window_width * max_gap_percent)  # max acceptable distance between two islands
+    # max acceptable distance between two islands
+    max_gap = int(window_width * max_gap_percent)
     if window_width == 0:
-        return [{'begin': np.min(image_arr), 'end': np.min(image_arr), 'area': 100}]  # if image is flat, return island with dummy area
+        # if image is flat, return island with dummy area
+        return [{'begin': np.min(image_arr),
+                 'end': np.min(image_arr), 'area': 100}]
     image_hist = np.histogram(image_arr, bins=window_width)
     islands = []  # find islands in picture's histogram
     gap_counter = 0
@@ -124,7 +150,8 @@ def find_islands(image_arr, max_gap_percent):
             islands[-1]['area'] += pixel_count
         elif pixel_count == 0 and is_island:
             if gap_counter == 0:
-                last_pixel = index - 1  # if just got out of island, remember the position
+                # if just got out of island, remember the position
+                last_pixel = index - 1
             gap_counter += 1
             if gap_counter > max_gap:
                 gap_counter = 0
@@ -138,40 +165,53 @@ def find_islands(image_arr, max_gap_percent):
     return islands
 
 
-
 def convert_image_smart(image, max_gap_percent=0.05, max_iterations=3):
     """
-    Check image's histogram in search of outlaying pixel-values, that almost certainly represent human-made marks,
-    highlights, captions. These artificially introduced pixels can harm regular window applying, because they may
-    significantly widen pixelspace, forcing the data itself to occupy only few percents of pixelspace.
-    TODO: Introduce checking the islands by calculating their variances - low variance == bad.
-    TODO: Instead of replacing pixels with mean value, replace them with
-    TODO: uniformly distributed noise to prevent spikes in histogram.
+    Checks image histogram in search of outlaying pixel-values, that
+    almost certainly represent human-made marks,vhighlights, captions.
+    These artificially introduced pixels can harm regular window
+    applying, because they may significantly widen color deptch, forcing
+    the data itself to occupy only few percents of all pixelspace.
+    Ideas: Instead of replacing pixels with mean value, replace them
+    with uniformly distributed noise to prevent spikes in histogram.
     :param image: input PIL.Image
-    :return: PIL.Image with man-made marks replaced with the mean of the rest of the picture, window applied
+    :param max_gap_percent: maximum distance between histogram islands
+    expressed in % of the pixelspace (color depth)
+    :param max_iterations: maximum number of repeats of the algorithm
+    the need of repeating comes from the fact, that a gap can be smaller
+    than max_gap_percent when the image is badly spanned and will be
+    detected only after initial window-applying
+    :return: numpy array with man-made marks replaced with the mean of
+    the rest of the picture and applied window
     """
     image_arr = np.asarray(image)
+    eps = 0.0001
     for index in range(max_iterations):
         islands = find_islands(image_arr, max_gap_percent)
         max_pix = islands[-1]['end']
         min_pix = islands[-1]['begin']
         real_min, real_max = get_island_boundaries(image_arr, min_pix, max_pix)
-        dominant_mean = (float(real_min) + float(real_max)) / 2
-        image_arr = apply_window(image_arr, real_min, real_max, dominant_mean)
-        # if len(islands) == 1:
-        #     return image_arr
+        if (abs(real_min - np.min(image_arr)) < eps)\
+                and (abs(real_max - np.max(image_arr)) < eps):
+            dominant_mean = (float(real_min) + float(real_max)) / 2
+            image_arr = apply_window(image_arr, real_min, real_max,
+                                     dominant_mean)
+        else:
+            break
     return image_arr
 
 
 def convert_all(images_folder, output_folder, image_extension, function,
                 verbose=False):
     """
-    Applies function to all images with extension image_extension from images_folder and saves them in output_folder.
-    Original pictures remain unchanged.
+    Applies function to all images with extension image_extension from
+    images_folder and saves them in output_folder. Original pictures
+    remain unchanged.
     :param images_folder: input folder
     :param output_folder: output folder
     :param image_extension: extension of the images to transform
     :param function: transformation function
+    :param verbose: should elaborates be displayed
     """
     output_ext = '.png'
     error_counter = 0
@@ -188,17 +228,15 @@ def convert_all(images_folder, output_folder, image_extension, function,
                 print(f'Converting {input_path} -> {output_path}')
             if not os.path.exists(
                     output_path) or input_path == output_path:
-                with Image.open(input_path).convert('RGB') as image: # dropping ALPHA channel
+                # .convert('RGB') drops unused alpha (opacity) channel
+                with Image.open(input_path).convert('RGB') as image:
                     converted_img = function(image)
-                    converted_img = Image.fromarray(
-                        np.uint8(converted_img))
+                    converted_img = Image.fromarray(np.uint8(converted_img))
                     converted_img.save(output_path)
         except Exception as ex:
             error_counter += 1
-            print(
-                f'[{error_counter}] Error converting an image: {image_name}',
-                ex)
-            # shutil.move(os.path.join('cr', image_name), os.path.join('errors', image_name))
+            print(f'[{error_counter}] Error converting an image: {image_name}',
+                  ex)
 
 
 if __name__ == "__main__":
