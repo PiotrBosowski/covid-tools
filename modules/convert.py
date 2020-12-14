@@ -202,6 +202,6 @@ def convert_all(images_folder, output_folder, image_extension, function,
 
 
 if __name__ == "__main__":
-    convert_all('/home/peter/covid/playground/nowy',
-                '/home/peter/covid/playground/nowy/nt', ".png",
+    convert_all('/home/peter/covid/playground/plgnd',
+                '/home/peter/covid/playground/plgnd2', ".png",
                 convert_image_smart, verbose=True)
