@@ -51,6 +51,8 @@ if __name__ == '__main__':
 
     parser_duplicate_finder = duplicate_subparsers.add_parser('find', help="find suplicates within one folder")
     parser_duplicate_finder.add_argument('--path', required=True, help="path to the folder")
+    parser_duplicate_finder.add_argument('--hash-size', required=True, help="size of an image hash")
+    parser_duplicate_finder.add_argument('--hf-factor', required=True, help="highfreq factor")
     parser_duplicate_finder.add_argument('--skip-strict', help="skips calculating regular hashes", action="store_true")
     parser_duplicate_finder.set_defaults(func=find_duplicates)
 

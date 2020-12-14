@@ -11,7 +11,7 @@ def compare_folders(args):
 
 
 def find_duplicates(args):
-    delete_duplicates(args.path, args.skip_strict)
+    delete_duplicates(args.path, args.hash_size, args.hf_factor, args.skip_strict)
 
 
 def restore_original_names(args):
@@ -69,8 +69,7 @@ def restore_original_names(image_dir):
                         os.path.join(image_dir, new_name))
             print(f"[{counter}] Renaming [{image}] back to [{new_name}]")
 
-
-def delete_duplicates(image_dir, skip_strict):
+def delete_duplicates(image_dir, hash_size, highfreq_factor, skip_strict):
     """
     Detects duplicates and moves them to 'duplicates' folder. Originals
     are also copied to the folder for easier visual comparison. Uses
@@ -81,37 +80,35 @@ def delete_duplicates(image_dir, skip_strict):
     if not skip_strict:
         delete_strict_duplicates(image_dir)
     counter = 0
-    for hash_size in [16]:
-        for highfreq_factor in [3]:
-            print(f"[hash_size={hash_size}]"
-                  f"[highfreq_factor={highfreq_factor}]")
-            images = {}
-            for ind, image in enumerate(sorted(os.listdir(image_dir))):
-                print(ind)
-                if os.path.isfile(os.path.join(image_dir, image)):
-                    images[image] = imagehash.phash(
-                        Image.open(os.path.join(image_dir, image)),
-                        hash_size=hash_size, highfreq_factor=highfreq_factor)
-            flipped = {}
-            duplicates_path = os.path.join(image_dir, 'duplicates')
-            os.makedirs(duplicates_path, exist_ok=True)
-            for key, value in images.items():
-                if value not in flipped:
-                    flipped[value] = key
-                else:
-                    counter += 1
-                    print(f"[hash_size={hash_size}][highfreq_factor="
-                          f"{highfreq_factor}][no. {counter}] Similar images:"
-                          f"   {flipped[value]}   {key}")
-                    shutil.copy(os.path.join(image_dir, flipped[value]),
-                                os.path.join(
-                                    duplicates_path,
-                                    f'DUPLICATE_{counter}_ORIG_'
-                                    + flipped[value]))
-                    shutil.move(os.path.join(image_dir, key),
-                                os.path.join(
-                                    duplicates_path,
-                                    f'DUPLICATE_{counter}_DUPL_' + key))
+    print(f"[hash_size={hash_size}]"
+          f"[highfreq_factor={highfreq_factor}]")
+    images = {}
+    for ind, image in enumerate(sorted(os.listdir(image_dir))):
+        print(ind)
+        if os.path.isfile(os.path.join(image_dir, image)):
+            images[image] = imagehash.phash(
+                Image.open(os.path.join(image_dir, image)),
+                hash_size=hash_size, highfreq_factor=highfreq_factor)
+    flipped = {}
+    duplicates_path = os.path.join(image_dir, 'duplicates')
+    os.makedirs(duplicates_path, exist_ok=True)
+    for key, value in images.items():
+        if value not in flipped:
+            flipped[value] = key
+        else:
+            counter += 1
+            print(f"[hash_size={hash_size}][highfreq_factor="
+                  f"{highfreq_factor}][no. {counter}] Similar images:"
+                  f"   {flipped[value]}   {key}")
+            shutil.copy(os.path.join(image_dir, flipped[value]),
+                        os.path.join(
+                            duplicates_path,
+                            f'DUPLICATE_{counter}_ORIG_'
+                            + flipped[value]))
+            shutil.move(os.path.join(image_dir, key),
+                        os.path.join(
+                            duplicates_path,
+                            f'DUPLICATE_{counter}_DUPL_' + key))
 
 
 def compare_folders_impl(dir_a, dir_b, sensitivity):
