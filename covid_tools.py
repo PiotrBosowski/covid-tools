@@ -28,13 +28,13 @@ if __name__ == '__main__':
 
     parser_color_flip = bit_converter_subparsers.add_parser('color-flip', help="inverse colors (or grayscale)")
     parser_color_flip.add_argument('--path', required=True, help='path to the image folder')
-    parser_color_flip.add_argument('--output', required=False, help='path to the output folder')
+    parser_color_flip.add_argument('--output', required=True, help='path to the output folder')
     parser_color_flip.add_argument('--ext', required=True, help='images extension')
     parser_color_flip.set_defaults(func=color_flip)
 
     parser_extension = bit_converter_subparsers.add_parser('format', help="changes the format of all files within directory")
     parser_extension.add_argument('--path', required=True, help='path to the image folder')
-    parser_extension.add_argument('--output', required=False, help='path to the output folder')
+    parser_extension.add_argument('--output', required=True, help='path to the output folder')
     parser_extension.add_argument('--ext-in', required=True, help='input extension')
     parser_extension.add_argument('--ext-out', required=True, help='output extension')
     parser_extension.set_defaults(func=extension)
