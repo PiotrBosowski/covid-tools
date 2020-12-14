@@ -77,6 +77,7 @@ def delete_duplicates(image_dir, hash_size, highfreq_factor, skip_strict):
     http://www.hackerfactor.com/blog/index.php?/archives/432-Looks-Like-It.html
     :param image_dir:
     """
+    hash_size, highfreq_factor = int(hash_size), int(highfreq_factor)
     if not skip_strict:
         delete_strict_duplicates(image_dir)
     counter = 0
