@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from PIL import Image
-
+from cv2 import imread
 
 def bitness(args):
     convert_all(args.input, args.output, args.ext,
@@ -229,10 +229,10 @@ def convert_all(images_folder, output_folder, image_extension, function,
             if not os.path.exists(
                     output_path) or input_path == output_path:
                 # .convert('RGB') drops unused alpha (opacity) channel
-                with Image.open(input_path).convert('RGB') as image:
-                    converted_img = function(image)
-                    converted_img = Image.fromarray(np.uint8(converted_img))
-                    converted_img.save(output_path)
+                image = imread(input_path)  # todo need further testing
+                converted_img = function(image)
+                converted_img = Image.fromarray(np.uint8(converted_img))
+                converted_img.save(output_path)
         except Exception as ex:
             error_counter += 1
             print(f'[{error_counter}] Error converting an image: {image_name}',

@@ -76,8 +76,8 @@ def build_dataset(datapool_path, output_path, train_size, valid_size,
 
 if __name__ == '__main__':
     build_dataset('/home/peter/media/c/Desktop/datapool',
-                  '/home/peter/covid/datasets/0.1k-0.1k-1k',
-                  100, 100, -1,
+                  '/home/peter/covid/datasets/1k-1k-8k-reforged',
+                  1000, 1000, -1,
                   allow_imbalanced_remainings=False,
-                  remainings_cap=1000,
+                  remainings_cap=8000,
                   labels=['covid', 'other', 'healthy'])
