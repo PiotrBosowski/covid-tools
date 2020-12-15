@@ -29,7 +29,7 @@ def create_set(datapool_path, dataset_path, subset_name, num_samples, labels,
                images, allow_imbalanced_remainings, remainings_cap):
     subset_path = os.path.join(dataset_path, subset_name)
     os.makedirs(subset_path)
-    with open(os.path.join(subset_path, 'origin.csv'), 'x') as csv_file:
+    with open(os.path.join(subset_path, 'origins.csv'), 'x') as csv_file:
         keys = ['img_name', "in_dataset_path", 'in_datapool_path', 'in_datasource_path', 'origin_datasource', 'label']
         csv_writer = csv.DictWriter(csv_file, keys)
         csv_writer.writeheader()
@@ -44,7 +44,7 @@ def create_set(datapool_path, dataset_path, subset_name, num_samples, labels,
                             in_dataset_path)
                 images[label].remove(sample)
                 sample['in_dataset_path'] = os.path.relpath(in_dataset_path,
-                                                            dataset_path)
+                                                            subset_path)
                 csv_writer.writerow(sample)
 
 

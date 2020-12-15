@@ -12,9 +12,9 @@ def build_datapool(input_path, output_path):
     backtracking the origin of particular picture and prevents naming
     collision.
     """
-    datasets = [os.path.join(input_path, directory)
+    datasource = [os.path.join(input_path, directory)
                 for directory in os.listdir(input_path)]
-    buildable_datasets = [dataset for dataset in datasets
+    buildable_datasources = [dataset for dataset in datasource
                           if os.path.exists(os.path.join(dataset, 'data'))]
     os.makedirs(output_path, exist_ok=False)
     with open(os.path.join(output_path, 'origins.csv'), 'x') as csv_file:
@@ -26,12 +26,12 @@ def build_datapool(input_path, output_path):
                                                'origin_datasource',
                                                'label'])
         csv_writer.writeheader()
-        for dataset in buildable_datasets:
-            print(os.path.basename(dataset))
-            for label in os.listdir(os.path.join(dataset, 'data')):
+        for source in buildable_datasources:
+            print(os.path.basename(source))
+            for label in os.listdir(os.path.join(source, 'data')):
                 print('\t', label, end=' ')
                 items = 0
-                input_label_path = os.path.join(dataset, 'data', label)
+                input_label_path = os.path.join(source, 'data', label)
                 output_label_path = os.path.join(output_path, label)
                 os.makedirs(output_label_path, exist_ok=True)
                 for file in os.listdir(input_label_path):
@@ -57,13 +57,15 @@ def build_datapool(input_path, output_path):
                                                         output_path),
                                          'in_datasource_path':
                                         os.path.relpath(input_file_path,
-                                                        input_path),
+                                                        source),
                                          'origin_datasource':
-                                        os.path.basename(dataset),
+                                        os.path.basename(source),
                                          'label': label})
                     items += 1
                 print(items)
 
+
+    # todo: puscic kiedys jeszcze raz z powodu zmian w CSVce
 
 if __name__ == '__main__':
     build_datapool('/home/peter/media/data/covid-19/cr',
