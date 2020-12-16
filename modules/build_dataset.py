@@ -14,11 +14,11 @@ def build(args):
                   args.labels)
 
 
-def curr_num_samples(images, label, num_samples, allow_imbalanced_remainings, remainings_cap):
+def curr_num_samples(images, num_samples, allow_imbalanced_remainings, remainings_cap):
     if num_samples > 0:
         return num_samples
     elif allow_imbalanced_remainings:  # num_samples < 0 => remainings
-        return min(len(images[label]), remainings_cap)
+        return -1  # all whats left in every set
     else:  # not allow imbalanced remainings
         # find lowest quantity set and take that much
         smallest_label = len(images[min(images, key=lambda x: len(images[x]))])
@@ -33,11 +33,14 @@ def create_set(datapool_path, dataset_path, subset_name, num_samples, labels,
         keys = ['img_name', "in_dataset_path", 'in_datapool_path', 'in_datasource_path', 'origin_datasource', 'label']
         csv_writer = csv.DictWriter(csv_file, keys)
         csv_writer.writeheader()
+        current_num = curr_num_samples(images, num_samples,
+                                       allow_imbalanced_remainings,
+                                       remainings_cap)
         for label in labels:
             output_label_folder = os.path.join(subset_path, label)
             os.makedirs(output_label_folder)
-            current_num = curr_num_samples(images, label, num_samples, allow_imbalanced_remainings, remainings_cap)
-            samples = random.sample(images[label], current_num)
+            samples = random.sample(images[label], current_num)\
+                if current_num > 0 else images[label]
             for sample in samples:
                 in_dataset_path = os.path.join(output_label_folder, sample['img_name'])
                 shutil.copy(os.path.join(datapool_path, sample['in_datapool_path']),
