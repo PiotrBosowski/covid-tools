@@ -65,8 +65,6 @@ def build_datapool(input_path, output_path):
                 print(items)
 
 
-    # todo: puscic kiedys jeszcze raz z powodu zmian w CSVce
-
 if __name__ == '__main__':
-    build_datapool('/home/peter/media/data/covid-19/cr',
-                   '/home/peter/media/c/Desktop/datapool')
+    build_datapool('/home/peter/media/data/covid-19/datasources/cr/',
+                   '/home/peter/media/data/covid-19/datapool')

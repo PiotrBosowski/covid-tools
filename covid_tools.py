@@ -6,7 +6,6 @@ from modules.duplicates import compare_folders_impl, find_duplicates, restore_or
 from modules.files_puller import pull_files
 from modules.labels import group_labels
 from modules.modalities import split_by_modality
-from modules.train_test_valid import split
 from modules.unzipper import unzip_all, verify_sha1_impl
 
 
