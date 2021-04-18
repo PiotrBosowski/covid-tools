@@ -1,7 +1,8 @@
 import os
 import numpy as np
 from PIL import Image
-from cv2 import imread
+# from cv2 import imread, IMREAD_UNCHANGED
+
 
 def bitness(args):
     convert_all(args.input, args.output, args.ext,
@@ -85,13 +86,12 @@ def apply_window(pixels, window_bot, window_top, mean):
     return np.around(pixels)
 
 
-def flip_colors(image):
+def flip_colors(image_arr):
     """
     Inverts image colors.
     :param image: PIL image to be converted
     :return: numpy array
     """
-    image_arr = np.asarray(image)
     img_min, img_max = np.min(image_arr), np.max(image_arr)
     output_arr = apply_window(image_arr, img_min, img_max,
                               (float(img_max) + float(img_min)) / 2)
@@ -165,16 +165,16 @@ def find_islands(image_arr, max_gap_percent):
     return islands
 
 
-def convert_image_smart(image, max_gap_percent=0.05, max_iterations=3):
+def convert_image_smart(image_arr, max_gap_percent=0.05, max_iterations=3):
     """
     Checks image histogram in search of outlaying pixel-values, that
-    almost certainly represent human-made marks,vhighlights, captions.
+    almost certainly represent human-made marks, highlights, captions.
     These artificially introduced pixels can harm regular window
     applying, because they may significantly widen color deptch, forcing
     the data itself to occupy only few percents of all pixelspace.
     Ideas: Instead of replacing pixels with mean value, replace them
     with uniformly distributed noise to prevent spikes in histogram.
-    :param image: input PIL.Image
+    :param image_arr: input PIL.Image
     :param max_gap_percent: maximum distance between histogram islands
     expressed in % of the pixelspace (color depth)
     :param max_iterations: maximum number of repeats of the algorithm
@@ -184,19 +184,17 @@ def convert_image_smart(image, max_gap_percent=0.05, max_iterations=3):
     :return: numpy array with man-made marks replaced with the mean of
     the rest of the picture and applied window
     """
-    image_arr = np.asarray(image)
     eps = 0.0001
     for index in range(max_iterations):
         islands = find_islands(image_arr, max_gap_percent)
         max_pix = islands[-1]['end']
         min_pix = islands[-1]['begin']
         real_min, real_max = get_island_boundaries(image_arr, min_pix, max_pix)
+        dominant_mean = (float(real_min) + float(real_max)) / 2
+        image_arr = apply_window(image_arr, real_min, real_max,
+                                 dominant_mean)
         if (abs(real_min - np.min(image_arr)) < eps)\
                 and (abs(real_max - np.max(image_arr)) < eps):
-            dominant_mean = (float(real_min) + float(real_max)) / 2
-            image_arr = apply_window(image_arr, real_min, real_max,
-                                     dominant_mean)
-        else:
             break
     return image_arr
 
@@ -229,10 +227,12 @@ def convert_all(images_folder, output_folder, image_extension, function,
             if not os.path.exists(
                     output_path) or input_path == output_path:
                 # .convert('RGB') drops unused alpha (opacity) channel
-                image = imread(input_path)  # todo need further testing
-                converted_img = function(image)
-                converted_img = Image.fromarray(np.uint8(converted_img))
-                converted_img.save(output_path)
+                # image = imread(input_path, IMREAD_UNCHANGED) # imread(input_path)  # todo need further testing
+                # image = Image.open(input_path).convert('L')
+                with Image.open(input_path) as image:
+                    converted_img = function(np.array(image))
+                    converted_img = Image.fromarray(np.uint8(converted_img))
+                    converted_img.save(output_path)
         except Exception as ex:
             error_counter += 1
             print(f'[{error_counter}] Error converting an image: {image_name}',
