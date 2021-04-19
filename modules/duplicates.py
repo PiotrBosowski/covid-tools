@@ -15,7 +15,7 @@ def find_duplicates(args):
 
 
 def restore_original_names(args):
-    restore_original_names(args.path)
+    restore_original_names_impl(args.path)
 
 
 def calculate_strict_hash(file):
@@ -53,7 +53,7 @@ def delete_strict_duplicates(image_dir):
     print(f"Found {dupl_counter} strict duplicates.")
 
 
-def restore_original_names(image_dir):
+def restore_original_names_impl(image_dir):
     """
     Restores original names, removing DUPLICATE_(...) from the beginning
     of affected files.
@@ -156,3 +156,8 @@ def compare_folders_impl(dir_a, dir_b, sensitivity):
                                              f'DUPLICATE_{counter}_DUPL_'
                                              + hashes_b[key]))
 
+
+# delete_duplicates('/home/peter/Desktop/dataset_to_examine/2.5k-1.5k-rest/everything',
+#                   hash_size=8, highfreq_factor=2, skip_strict=True)
+
+restore_original_names_impl('/home/peter/Desktop/dataset_to_examine/2.5k-1.5k-rest/everything/duplicates')
