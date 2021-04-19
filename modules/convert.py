@@ -1,4 +1,6 @@
 import os
+from multiprocessing import Pool
+
 import numpy as np
 from PIL import Image
 # from cv2 import imread, IMREAD_UNCHANGED
@@ -199,6 +201,17 @@ def convert_image_smart(image_arr, max_gap_percent=0.05, max_iterations=3):
     return image_arr
 
 
+def process_image(input_path, output_path, processing):
+    print(f'Converting {input_path} -> {output_path}')
+    try:
+        with Image.open(input_path) as image:
+            converted_img = processing(np.array(image))
+            converted_img = Image.fromarray(np.uint8(converted_img))
+            converted_img.save(output_path)
+    except Exception as ex:
+        print(f'Error converting an image: {input_path}', ex)
+
+
 def convert_all(images_folder, output_folder, image_extension, function,
                 verbose=False):
     """
@@ -211,35 +224,22 @@ def convert_all(images_folder, output_folder, image_extension, function,
     :param function: transformation function
     :param verbose: should elaborates be displayed
     """
+    thread_count = 6
     output_ext = '.png'
-    error_counter = 0
     os.makedirs(output_folder, exist_ok=True)
     images = [img for img in os.listdir(images_folder)
               if os.path.isfile(os.path.join(images_folder, img))
               and image_extension == 'all' or img.endswith(image_extension)]
-    for image_name in images:
-        try:
-            input_path = os.path.join(images_folder, image_name)
-            image_name, _ = os.path.splitext(image_name)
-            output_path = os.path.join(output_folder, image_name + output_ext)
-            if verbose:
-                print(f'Converting {input_path} -> {output_path}')
-            if not os.path.exists(
-                    output_path) or input_path == output_path:
-                # .convert('RGB') drops unused alpha (opacity) channel
-                # image = imread(input_path, IMREAD_UNCHANGED) # imread(input_path)  # todo need further testing
-                # image = Image.open(input_path).convert('L')
-                with Image.open(input_path) as image:
-                    converted_img = function(np.array(image))
-                    converted_img = Image.fromarray(np.uint8(converted_img))
-                    converted_img.save(output_path)
-        except Exception as ex:
-            error_counter += 1
-            print(f'[{error_counter}] Error converting an image: {image_name}',
-                  ex)
+    tasks = [(os.path.join(images_folder, image_name),
+               os.path.join(output_folder,
+                            os.path.splitext(image_name)[0] + output_ext),
+               function)
+              for image_name in images]
+    pool = Pool(processes=thread_count)
+    pool.starmap(process_image, tasks)
 
 
 if __name__ == "__main__":
-    convert_all('/home/peter/covid/playground/plgnd',
-                '/home/peter/covid/playground/plgnd2', ".png",
+    convert_all('/home/peter/media/data/covid19_neg_II/cr',
+                '/home/peter/media/data/covid19_neg_II/cr_conv', ".png",
                 convert_image_smart, verbose=True)
